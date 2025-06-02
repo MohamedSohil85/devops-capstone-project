@@ -12,6 +12,7 @@ from tests.factories import AccountFactory
 from service.common import status  # HTTP Status Codes
 from service.models import db, Account, init_db
 from service.routes import app
+from service import talisman
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql://postgres:postgres@localhost:5432/postgres"
@@ -34,6 +35,7 @@ class TestAccountService(TestCase):
         app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URI
         app.logger.setLevel(logging.CRITICAL)
         init_db(app)
+        talisman.force_https = False
 
     @classmethod
     def tearDownClass(cls):
@@ -235,3 +237,9 @@ def test_read_account_not_found(self):
         self.assertEqual(len(response.get_json()), 0)
         # Just to be sure
         self.assertEqual(len(Account.all()), 0)
+
+def test_cors_security(self):
+        """Security: The header should contain the CORS policies"""
+        response = self.client.get("/", environ_overrides=HTTPS_ENVIRON)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.headers.get("Access-Control-Allow-Origin"), "*")        
